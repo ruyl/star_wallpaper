@@ -18,6 +18,7 @@ But you may also need to include SDL2Main.
 I have also included a makefile in the repository for building on windows. Simply run ```make``` and it should work.
 
 This will create an executable that can then be fed into your preffered animated wallpaper engine.
+Note: If you have any issues running it on your wallpaper engine (it giving an error that the program has no graphical interface), then replace the main() function with WinMain() (no arguments).
 
 # Features and Future Enhancements
 Currently the wallpaper has two modes: stars flying from the right to the left of the screen and stars coming out from the middle of the screen (like the old Windows screensaver). The former is default.  
