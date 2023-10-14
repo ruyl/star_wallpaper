@@ -204,7 +204,7 @@ void draw_circle_bresenham(SDL_Renderer* renderer, float center_x, float center_
 	int x = 0;
 	int y = radius;
 	/* Find whether the midpoint between "east" and "southest" would be outside or inside/on the circle: */
-	float dist = permimeter_distance(x, y - .5, radius);
+	float dist = permimeter_distance(x + 1, y - .5, radius);
 	draw_8_symmetry(renderer, x, y, (int) center_x, (int) center_y);
 
 	while (x < y) {
