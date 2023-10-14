@@ -190,13 +190,48 @@ void draw_8_symmetry(SDL_Renderer *renderer, int x, int y, int center_x, int cen
 		SDL_RenderDrawPoint(renderer, center_x - y, center_y + x);
 }
 
+/* Distance of a unit cartesian x, y point from the edge of the circle centered on 0, 0 with radius radius */
+float permimeter_distance(float x, float y, float radius)
+{
+	return x * x + y * y - radius * radius;
+}
+
+
+/* TODO: use a nice circle drawing algorithm like Bresenham's */
+/* Naively draws all of the points along the radius of a given circle through the magic of trigonometry */
+void draw_circle_bresenham(SDL_Renderer* renderer, float center_x, float center_y, float radius)
+{
+	int x = 0;
+	int y = radius;
+	/* Find whether the midpoint between "east" and "southest" would be outside or inside/on the circle: */
+	float dist = permimeter_distance(x, y - .5, radius);
+	draw_8_symmetry(renderer, x, y, (int) center_x, (int) center_y);
+
+	while (x < y) {
+		/* If this point's distance is inside, then we choose "east" as a correction */
+		if (dist < 0) {
+			x++;
+		/* Else we choose "southeast" as a correction */
+		} else {
+			x++;
+			y--;
+		}
+		/* Calculate the next point's distance */
+		dist = permimeter_distance(x, y, radius);
+		/* Draw */
+		draw_8_symmetry(renderer, x, y, (int) center_x, (int) center_y);
+	}
+
+}
+
+
 /* TODO: use a nice circle drawing algorithm like Bresenham's */
 /* Naively draws all of the points along the radius of a given circle through the magic of trigonometry */
 void draw_circle_naive(SDL_Renderer* renderer, float center_x, float center_y, float radius)
 {
 	int y;
 	int x;
-	for (x = 0; x < radius + 1; x++) {
+	for (x = 0; x <= radius; x++) {
 		/* This calculation brought to you by the cartesian definition of a circle: */
 		y = (int) sqrt((radius * radius) - (x * x)); /* Doing plus instead of minus here is actually really cool looking */
 		/* Break after x = y, since we're making use of 8-way symmetry */
@@ -225,7 +260,7 @@ int render(struct window_struct* window_data, star *all_stars) {
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 		
 		for (int incr_radius = 0; incr_radius < starterator->size; incr_radius++) {
-			draw_circle_naive(renderer, starterator->x_pos, starterator->y_pos, incr_radius);
+			draw_circle_bresenham(renderer, starterator->x_pos, starterator->y_pos, incr_radius);
 		}		
 		starterator = starterator->next;
 	}
