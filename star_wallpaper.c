@@ -174,9 +174,6 @@ purge_stars(SDL_Renderer *renderer, star *all_stars) {
 	}
 }
 
-
-
-
 /* Draws the 8 symmetrical points in a circle, given the radius of the circle, the unit point of the circle to draw, and it's x, y center point in the renderer coordinate system*/
 void draw_8_symmetry(SDL_Renderer *renderer, int x, int y, int center_x, int center_y) {
 		SDL_RenderDrawPoint(renderer, center_x + x, center_y - y);
@@ -190,55 +187,39 @@ void draw_8_symmetry(SDL_Renderer *renderer, int x, int y, int center_x, int cen
 		SDL_RenderDrawPoint(renderer, center_x - y, center_y + x);
 }
 
-/* Distance of a unit cartesian x, y point from the edge of the circle centered on 0, 0 with radius radius */
-float permimeter_distance(float x, float y, float radius)
-{
-	return x * x + y * y - radius * radius;
-}
-
-
-/* TODO: use a nice circle drawing algorithm like Bresenham's */
-/* Naively draws all of the points along the radius of a given circle through the magic of trigonometry */
+/* Uses Bresenham's algorithm to draw the radius of a given circle, calculating midpoints without sqauring, using the previously calculated value (faster) */
 void draw_circle_bresenham(SDL_Renderer* renderer, float center_x, float center_y, float radius)
 {
 	int x = 0;
 	int y = radius;
-	/* Find whether the midpoint between "east" and "southest" would be outside or inside/on the circle: */
-	float dist = permimeter_distance(x + 1, y - .5, radius);
+	/* Precalulated distance between the midpoint of initial "east" and "southest" and the circle perimiter: */
+	float dist = (float)5 / (float)4 - y;
+	
+	/* Draw the points on the approximate perimeter, but also every point below it */
 	draw_8_symmetry(renderer, x, y, (int) center_x, (int) center_y);
-
+	for (int downward_y = y; downward_y >= x; downward_y--) {
+		draw_8_symmetry(renderer, x, downward_y, (int) center_x, (int) center_y);		
+	}
+	
 	while (x < y) {
 		/* If this point's distance is inside, then we choose "east" as a correction */
-		if (dist < 0) {
+		if (dist <= 0) {
 			x++;
+			/* "Manually" calculate the next point's distance */
+			dist = dist + 2 * x + 3;
+
 		/* Else we choose "southeast" as a correction */
 		} else {
 			x++;
 			y--;
+			/* "Manually" calculate the next point's distance */
+			dist = dist + 2 * x - 2 * y - 5;
 		}
-		/* Calculate the next point's distance */
-		dist = permimeter_distance(x, y, radius);
-		/* Draw */
+		/* Draw the points on the approximate perimeter, but also every point below it */
 		draw_8_symmetry(renderer, x, y, (int) center_x, (int) center_y);
-	}
-
-}
-
-
-/* TODO: use a nice circle drawing algorithm like Bresenham's */
-/* Naively draws all of the points along the radius of a given circle through the magic of trigonometry */
-void draw_circle_naive(SDL_Renderer* renderer, float center_x, float center_y, float radius)
-{
-	int y;
-	int x;
-	for (x = 0; x <= radius; x++) {
-		/* This calculation brought to you by the cartesian definition of a circle: */
-		y = (int) sqrt((radius * radius) - (x * x)); /* Doing plus instead of minus here is actually really cool looking */
-		/* Break after x = y, since we're making use of 8-way symmetry */
-		if (x > y) {
-			break;
+		for (int downward_y = y; downward_y >= x; downward_y--) {
+			draw_8_symmetry(renderer, x, downward_y, (int) center_x, (int) center_y);		
 		}
-		draw_8_symmetry(renderer, x, y, (int) center_x, (int) center_y);
 	}
 }
 
@@ -258,10 +239,7 @@ int render(struct window_struct* window_data, star *all_stars) {
 	while (starterator != NULL) {
 		/* Fill the circle */
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-		
-		for (int incr_radius = 0; incr_radius < starterator->size; incr_radius++) {
-			draw_circle_bresenham(renderer, starterator->x_pos, starterator->y_pos, incr_radius);
-		}		
+		draw_circle_bresenham(renderer, starterator->x_pos, starterator->y_pos, starterator->size);
 		starterator = starterator->next;
 	}
 	SDL_RenderPresent(renderer);
